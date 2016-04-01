@@ -1,15 +1,19 @@
-#include <cstdio>
+ï»¿#include <cstdio>
 #include <iostream>
 #include <stdlib.h>
 #include <fstream>
 #include <cmath>
 #include <ctime>
+#include <arrayfire.h>
+#include <cstdio>
+#include <cstdlib>
 
+using namespace af;
 using namespace std;
 
 #include "compute.hpp"
 
-//¦Û©wµ²ºc ¨C°µ§¹¤@¦¸WeakLeaner ·|²£¥Í¤@²ÕWeakLeanerOutputªºµ²ºc ¦A¦s¨ìF¤Gºû°}¦C¤§¤¤
+//è‡ªå®šçµæ§‹ æ¯åšå®Œä¸€æ¬¡WeakLeaner æœƒç”¢ç”Ÿä¸€çµ„WeakLeanerOutputçš„çµæ§‹ å†å­˜åˆ°FäºŒç¶­é™£åˆ—ä¹‹ä¸­
 struct WeakLeanerOutput
 {
 	public:
@@ -26,17 +30,23 @@ struct WeakLeanerOutput
 };
 
 WeakLeanerOutput weakLearn(float pf1[], float nf1[], float pw[], float nw[], int pf1_sn, int nf1_sn);
-void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf_sn, int nf_sn, int fn, int times);
-int AdaBoostTest(float data[], int data_sn, int data_fn);
+void AdaBoostTrain(float pf[][2429], float nf[][4548], int times);
+void AdaBoostTest(float data[][472]);
 float MyRound(float number);
 
 Compute compute("WeakLearn", CL_DEVICE_TYPE_GPU);
 
-const int times = 3000;	//°V½m¦¸¼Æ
-float F[times][4];	//¥Î¤Gºû¯x°} ¦s©ñ¨C¦¸°V½m§¹¤§µ²ªG 4¤À§O¥NªíµÛ 1. selectif(¿ï¨ìªºFeature) 2. polarity(¥kÃä¬O¥¿or­t¸ê®Æ) 3. error(¿ù»~²v) 4. alpha­È 
+const int times = 500;	//è¨“ç·´æ¬¡æ•¸
+float F[times][4];	//ç”¨äºŒç¶­çŸ©é™£ å­˜æ”¾æ¯æ¬¡è¨“ç·´å®Œä¹‹çµæœ 4åˆ†åˆ¥ä»£è¡¨è‘— 1. selectif(é¸åˆ°çš„Feature) 2. polarity(å³é‚Šæ˜¯æ­£orè² è³‡æ–™) 3.theta 4. alphaå€¼ 
+const int pn_Test = 472;	// positive number Testing Data
+const int pn_Train = 2429;  // positive number Traing Data
+const int fn_Train = 4548;  // negative number Traing Data
+const int fn = 2101;
 
 int main()
 {
+	
+
 	//float *output = weakLearn(pf[0], nf[0], pw[0], nw[0], sizeof(pf) / sizeof(pf[0]), sizeof(nf) / sizeof(nf[0]));
 
 	char file_Train_PF1[] = "G:\\Train_PF1.txt";   //2429*2101
@@ -44,21 +54,12 @@ int main()
 	char file_Test_PF1[] = "G:\\Test_PF1.txt";	   //472*2101
 	char file_Test_NF1[] = "G:\\Test_NF1.txt";	   //23573*2101
 
-	const int row_Train_PF1 = 2101;
-	const int column_Train_PF1 = 2429;
-
-	auto arr_Train_PF1 = new float[row_Train_PF1][column_Train_PF1];
-
-	////°ÊºA°t¸m¤Gºû¯x°} §_«h·|StackOverFlow
-	//arr_Train_PF1 = new float*[row_Train_PF1];
-	//for (int i = 0; i<row_Train_PF1; i++)
-	//	arr_Train_PF1[i] = new float[column_Train_PF1];
-
+	auto arr_Train_PF1 = new float[fn][pn_Train];
 	fstream fp1;
 	char line1[256];
 
-	fp1.open(file_Train_PF1, ios::in);//¶}±ÒÀÉ®×
-	if (!fp1){//¦pªG¶}±ÒÀÉ®×¥¢±Ñ¡Afp¬°0¡F¦¨¥\¡Afp¬°«D0
+	fp1.open(file_Train_PF1, ios::in);//é–‹å•Ÿæª”æ¡ˆ
+	if (!fp1){//å¦‚æœé–‹å•Ÿæª”æ¡ˆå¤±æ•—ï¼Œfpç‚º0ï¼›æˆåŠŸï¼Œfpç‚ºé0
 		cout << "Fail to open file: " << file_Train_PF1 << endl;
 	}
 
@@ -67,40 +68,29 @@ int main()
 
 	while (fp1.getline(line1, sizeof(line1), '\t'))
 	{
-		if (i1 == column_Train_PF1)
+		if (i1 == pn_Train)
 			break;
 
 		arr_Train_PF1[j1][i1] = atof(line1);
 
 		j1++;
 
-		if (j1 == row_Train_PF1)
+		if (j1 == fn)
 		{
 			j1 = 0;
 			i1++;
 		}
 	}
-	//cout << arr_Train_PF1[0][0] << endl;
-	//cout << arr_Train_PF1[0][2428] << endl;
-	//cout << arr_Train_PF1[2100][0] << endl;
-	//cout << arr_Train_PF1[2100][2428] << endl;
 
-	fp1.close();//Ãö³¬ÀÉ®×
+	fp1.close();//é—œé–‰æª”æ¡ˆ
 
-	const int row_Train_NF1 = 2101;
-	const int column_Train_NF1 = 4548;
-	auto arr_Train_NF1 = new float[row_Train_NF1][column_Train_NF1];
 
-	//°ÊºA°t¸m¤Gºû¯x°} §_«h·|StackOverFlow
-	//arr_Train_NF1 = new float*[row_Train_NF1];
-	//for (int i = 0; i<row_Train_NF1; i++)
-	//	arr_Train_NF1[i] = new float[column_Train_NF1];
-
+	auto arr_Train_NF1 = new float[fn][fn_Train];
 	fstream fp2;
 	char line2[256];
 
-	fp2.open(file_Train_NF1, ios::in);//¶}±ÒÀÉ®×
-	if (!fp2){//¦pªG¶}±ÒÀÉ®×¥¢±Ñ¡Afp¬°0¡F¦¨¥\¡Afp¬°«D0
+	fp2.open(file_Train_NF1, ios::in);//é–‹å•Ÿæª”æ¡ˆ
+	if (!fp2){//å¦‚æœé–‹å•Ÿæª”æ¡ˆå¤±æ•—ï¼Œfpç‚º0ï¼›æˆåŠŸï¼Œfpç‚ºé0
 		cout << "Fail to open file: " << file_Train_NF1 << endl;
 	}
 
@@ -109,65 +99,63 @@ int main()
 
 	while (fp2.getline(line2, sizeof(line2), '\t'))
 	{
-		if (i2 == column_Train_NF1)
+		if (i2 == fn_Train)
 			break;
 
 		arr_Train_NF1[j2][i2] = atof(line2);
 
 		j2++;
 
-		if (j2 == row_Train_NF1)
+		if (j2 == fn)
 		{
 			j2 = 0;
 			i2++;
 		}
 	}
 
-	fp2.close();//Ãö³¬ÀÉ®×
+	fp2.close();//é—œé–‰æª”æ¡ˆ
 
-	//const int row_Test_PF1 = 472;
-	//const int column_Test_PF1 = 2101;
-	//float **arr_Test_PF1;
+	
+	auto arr_Test_PF1 = new float[fn][pn_Test];
 
-	////°ÊºA°t¸m¤Gºû¯x°} §_«h·|StackOverFlow
+	//å‹•æ…‹é…ç½®äºŒç¶­çŸ©é™£ å¦å‰‡æœƒStackOverFlow
 	//arr_Test_PF1 = new float*[row_Test_PF1];
 	//for (int i = 0; i<row_Test_PF1; i++)
-	//	arr_Test_PF1[i] = new float[column_Test_PF1];
+	//	arr_Test_PF1[i] = new float[pn_Test];
 
-	//fstream fp3;
-	//char line3[128];
+	fstream fp3;
+	char line3[128];
 
-	//fp3.open(file_Test_PF1, ios::in);//¶}±ÒÀÉ®×
-	//if (!fp3){//¦pªG¶}±ÒÀÉ®×¥¢±Ñ¡Afp¬°0¡F¦¨¥\¡Afp¬°«D0
-	//	cout << "Fail to open file: " << file_Test_PF1 << endl;
-	//}
+	fp3.open(file_Test_PF1, ios::in);//é–‹å•Ÿæª”æ¡ˆ
+	if (!fp3){//å¦‚æœé–‹å•Ÿæª”æ¡ˆå¤±æ•—ï¼Œfpç‚º0ï¼›æˆåŠŸï¼Œfpç‚ºé0
+		cout << "Fail to open file: " << file_Test_PF1 << endl;
+	}
 
-	//int i3 = 0;
-	//int j3 = 0;
+	int i3 = 0;
+	int j3 = 0;
 
-	//while (fp3.getline(line3, sizeof(line3), '\t'))
-	//{
-	//	if (i3 == row_Test_PF1)
-	//		break;
+	while (fp3.getline(line3, sizeof(line3), '\t'))
+	{
+		if (i3 == pn_Test)
+			break;
 
-	//	arr_Test_PF1[i3][j3] = atof(line3);
+		arr_Test_PF1[j3][i3] = atof(line3);
 
-	//	j3++;
+		j3++;
 
-	//	if (j3 == column_Test_PF1)
-	//	{
-	//		j3 = 0;
-	//		i3++;
-	//	}
-	//}
+		if (j3 == fn)
+		{
+			j3 = 0;
+			i3++;
+		}
+	}
 
-	//fp3.close();//Ãö³¬ÀÉ®×
+	fp3.close();//é—œé–‰æª”æ¡ˆ
 
 	//const int row_Test_NF1 = 23573;
-	const int column_Test_NF1 = 2101;
 	//float **arr_Test_NF1;
 
-	////°ÊºA°t¸m¤Gºû¯x°} §_«h·|StackOverFlow
+	////å‹•æ…‹é…ç½®äºŒç¶­çŸ©é™£ å¦å‰‡æœƒStackOverFlow
 	//arr_Test_NF1 = new float*[row_Test_NF1];
 	//for (int i = 0; i<row_Test_NF1; i++)
 	//	arr_Test_NF1[i] = new float[column_Test_NF1];
@@ -175,8 +163,8 @@ int main()
 	//fstream fp4;
 	//char line4[128];
 
-	//fp4.open(file_Test_NF1, ios::in);//¶}±ÒÀÉ®×
-	//if (!fp4){//¦pªG¶}±ÒÀÉ®×¥¢±Ñ¡Afp¬°0¡F¦¨¥\¡Afp¬°«D0
+	//fp4.open(file_Test_NF1, ios::in);//é–‹å•Ÿæª”æ¡ˆ
+	//if (!fp4){//å¦‚æœé–‹å•Ÿæª”æ¡ˆå¤±æ•—ï¼Œfpç‚º0ï¼›æˆåŠŸï¼Œfpç‚ºé0
 	//	cout << "Fail to open file: " << file_Test_NF1 << endl;
 	//}
 
@@ -199,20 +187,21 @@ int main()
 	//	}
 	//}
 
-	//fp4.close();//Ãö³¬ÀÉ®×
+	//fp4.close();//é—œé–‰æª”æ¡ˆ
 
 	clock_t begin = clock();
 	
-	AdaBoostTrain(arr_Train_PF1, arr_Train_NF1, column_Train_PF1, column_Train_NF1, 2101, times);
+	AdaBoostTrain(arr_Train_PF1, arr_Train_NF1, times);
 	//int TP = AdaBoostTest(arr_Test_PF1[0], row_Test_PF1, column_Test_NF1);
 	//printf("%f/n", TP / row_Test_PF1);
 	//int FP = row_Test_NF1-AdaBoostTest(arr_Test_NF1[0], row_Test_NF1, column_Test_NF1);
 	//printf("%f/n", FP / row_Test_NF1);
+	AdaBoostTest(arr_Test_PF1);
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	cout << "Time: " << elapsed_secs << " seconds!!!!" << endl;
 
-	////ÄÀ©ñ°O¾ĞÅé
+	////é‡‹æ”¾è¨˜æ†¶é«”
 	//for (int i = 0; i < row_Train_PF1; i++)
 	//{
 	//	delete[] arr_Train_PF1[i];
@@ -224,38 +213,38 @@ int main()
 	system("pause");
 }
 
-void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, int fn, int times)
+void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 {
-	float *pw = new float[pf1_sn];
-	float *nw = new float[nf1_sn];
+	float *pw = new float[pn_Train];
+	float *nw = new float[fn_Train];
 
-	for (int i = 0; i < pf1_sn; i++)
+	for (int i = 0; i < pn_Train; i++)
 	{
-		pw[i] = 0.5 / pf1_sn;
+		pw[i] = 0.5 / pn_Train;
 	}
 
-	for (int i = 0; i < nf1_sn; i++)
+	for (int i = 0; i < fn_Train; i++)
 	{
-		nw[i] = 0.5 / nf1_sn;
+		nw[i] = 0.5 / fn_Train;
 	}
 
 	float wsum = 0;
 
-	for (int i = 0; i < pf1_sn; i++)
+	for (int i = 0; i < pn_Train; i++)
 	{
 		wsum = wsum + pw[i];
 	}
-	for (int i = 0; i < nf1_sn; i++)
+	for (int i = 0; i < fn_Train; i++)
 	{
 		wsum = wsum + nw[i];
 	}
 
-	for (int i = 0; i < pf1_sn; i++)
+	for (int i = 0; i < pn_Train; i++)
 	{
 		pw[i] /= wsum;
 	}
 
-	for (int i = 0; i < nf1_sn; i++)
+	for (int i = 0; i < fn_Train; i++)
 	{
 		nw[i] /= wsum;
 	}
@@ -263,14 +252,14 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 	float ret[2101][3];
 
 	//OpenCL
-	int pf_shape[2] = { fn, pf1_sn };
-	int nf_shape[2] = { fn, nf1_sn };
+	int pf_shape[2] = { fn, pn_Train };
+	int nf_shape[2] = { fn, fn_Train };
 
-	compute.set_buffer((float *)pf, fn * pf1_sn*sizeof(float));
-	compute.set_buffer((float *)nf, fn * nf1_sn*sizeof(float));
+	compute.set_buffer((float *)pf, fn * pn_Train*sizeof(float));
+	compute.set_buffer((float *)nf, fn * fn_Train*sizeof(float));
 
-	compute.set_buffer((float *)pw, pf1_sn*sizeof(float));
-	compute.set_buffer((float *)nw, nf1_sn*sizeof(float));
+	compute.set_buffer((float *)pw, pn_Train*sizeof(float));
+	compute.set_buffer((float *)nw, fn_Train*sizeof(float));
 
 	compute.set_buffer((int *)pf_shape, 2 * sizeof(int));
 	compute.set_buffer((int *)nf_shape, 2 * sizeof(int));
@@ -283,20 +272,20 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 	{
 		float wsum = 0;
 
-		for (int i = 0; i < pf1_sn; i++)
+		for (int i = 0; i < pn_Train; i++)
 		{
 			wsum = wsum + pw[i];
 		}
-		for (int i = 0; i < nf1_sn; i++)
+		for (int i = 0; i < fn_Train; i++)
 		{
 			wsum = wsum + nw[i];
 		}
 
-		for (int i = 0; i < pf1_sn; i++)
+		for (int i = 0; i < pn_Train; i++)
 		{
 			pw[i] /= wsum;
 		}
-		for (int i = 0; i < nf1_sn; i++)
+		for (int i = 0; i < fn_Train; i++)
 		{
 			nw[i] /= wsum;
 		}
@@ -308,7 +297,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 		compute.reset_buffer(3, nw);
 
 
-		//´X­ÓKernel¦b¶]
+		//å¹¾å€‹Kernelåœ¨è·‘
 		compute.run(2101);
 
 	
@@ -339,9 +328,8 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 		//	error = output[i].final_error;
 		//	polarity = output[i].polarity;
 		//	theta = output[i].theta;
-		//	selectif = i;	//³Ì¦nªº¨º¤@"¦æ"¯S¼x (±q0¶}©lºâ¡A¸òMatlab»~®t1)
+		//	selectif = i;	//æœ€å¥½çš„é‚£ä¸€"è¡Œ"ç‰¹å¾µ (å¾0é–‹å§‹ç®—ï¼Œè·ŸMatlabèª¤å·®1)
 		//}
-
 
 		//printf("%f, %f, %f, %f\n", output[i].theta, output[i].polarity, output[i].final_error, selectif);
 		
@@ -350,7 +338,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 
 		if (polarity == 1)
 		{
-			for (int i = 0; i < pf1_sn; i++)
+			for (int i = 0; i < pn_Train; i++)
 			{
 				if (pf[selectif][i] >= theta)
 				{
@@ -358,7 +346,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 				}
 			}
 
-			for (int i = 0; i < nf1_sn; i++)
+			for (int i = 0; i < fn_Train; i++)
 			{
 				if (nf[selectif][i] < theta)
 				{
@@ -368,14 +356,14 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 		}
 		else
 		{
-			for (int i = 0; i < pf1_sn; i++)
+			for (int i = 0; i < pn_Train; i++)
 			{
 				if (pf[selectif][i] < theta)
 				{
 					pw[i] = pw[i] * beta;
 				}
 			}
-			for (int i = 0; i < nf1_sn; i++)
+			for (int i = 0; i < fn_Train; i++)
 			{
 				if (nf[selectif][i] >= theta)
 				{
@@ -391,7 +379,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 		F[i][2] = theta;
 		F[i][3] = log(1 / beta);
 
-		//§âalpha­È ¥|±Ë¤­¤J¦Ü¤p¼Æ²Ä¥|¦ì
+		//æŠŠalphaå€¼ å››æ¨äº”å…¥è‡³å°æ•¸ç¬¬å››ä½
 		F[i][3] = MyRound(F[i][3]);
 
 		/*if (i % 100 == 0)*/
@@ -399,49 +387,65 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int pf1_sn, int nf1_sn, i
 
 	}
 
-	//ÄÀ©ñ°O¾ĞÅé
+	//é‡‹æ”¾è¨˜æ†¶é«”
 	delete[] pw;
 	delete[] nw;
 }
 
 
-//¦Û»s¤p¼ÆÂI¥|±Ë¤­¤J¦Ü¤p¼Æ²Ä¥|¦ì
+//è‡ªè£½å°æ•¸é»å››æ¨äº”å…¥è‡³å°æ•¸ç¬¬å››ä½
 float MyRound(float number)
 {
 	float f = floor(number * 10000 + 0.5) / 10000;
 	return f;
 }
 
-int AdaBoostTest(float data[], int data_sn, int data_fn)
+void AdaBoostTest(float data[][472])
 {
-	float *predit = new float[data_sn];
-	int count = 0;
-	for (int i = 0; i < data_sn; i++)
+	int F_Length = sizeof(F) / sizeof(F[0]);
+	float alphaSum = 0;
+	float *score = new float[pn_Test];
+
+	for (size_t a = 0; a < pn_Test; a++)
+		score[a] = 0.0;
+
+
+	//cout << "\n\nF length= " << F_Length;
+	//cout << "\alphaSum= " << alphaSum;
+	//system("pause");
+
+	for (size_t i = 0; i < F_Length; i++)
 	{
-		for (int j = 0; j < data_fn; j++)
+		alphaSum += F[i][3];
+
+		for (size_t j = 0; j < pn_Test; j++)
 		{
-			for (int k = 0; k < sizeof(F) / sizeof(F[0]); k++)
+			//Polarityç‚ºæ­£
+			if (F[i][1] == 1)
 			{
-				if (F[k][1] == 1)
-				{
-					if (data[i*(data_sn - 1) + j] >= F[k][2])
-					{
-						predit[i] = predit[i] + F[k][3];
-					}
-				}
-				else
-				{
-					if (data[i*(data_sn - 1) + j] < F[k][2])
-					{
-						predit[i] = predit[i] + F[k][3];
-					}
-				}
+				if (data[(int)F[i][0]][j] >= F[i][2])
+					score[j] += F[i][3];
+			}
+			//Polarityç‚ºè´Ÿ
+			else
+			{
+				if (data[(int)F[i][0]][j] < F[i][2])
+					score[j] += F[i][3];
 			}
 		}
-		if (predit[i] > 0.5)
-		{
-			count++;
-		}
 	}
-	return count;
+
+	cout << "\nalphaSum = " << alphaSum << "\n";
+
+	float scoreSum = 0;
+	for (size_t z = 0; z < pn_Test; z++)
+		scoreSum += score[z];
+
+	cout << "\nscore = " << scoreSum / (alphaSum*pn_Test) << "\n";
+
+	//for (size_t z = 0; z < pn_Test; z++)
+	//	cout << "socre[" << z << "] = " << score[z] << "  score/alphaSum= " << score[z] / alphaSum <<"\n";
+
+	//system("pause");
+
 }
