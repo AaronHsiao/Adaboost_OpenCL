@@ -38,15 +38,14 @@ Compute compute("WeakLearn", CL_DEVICE_TYPE_GPU);
 
 const int times = 500;	//訓練次數
 float F[times][4];	//用二維矩陣 存放每次訓練完之結果 4分別代表著 1. selectif(選到的Feature) 2. polarity(右邊是正or負資料) 3.theta 4. alpha值 
-const int pn_Test = 472;	// positive number Testing Data
-const int pn_Train = 2429;  // positive number Traing Data
-const int fn_Train = 4548;  // negative number Traing Data
-const int fn = 2101;
+const int Train_PF_Num = 2429;  // positive number Traing Data
+const int Train_NF_Num = 4548;  // negative number Traing Data
+const int Test_PF_Num = 472;	// positive number Testing Data
+const int Test_NF_Num = 23573;  // negative number Testing Data
+const int fn = 2101;		// feature number
 
 int main()
 {
-	
-
 	//float *output = weakLearn(pf[0], nf[0], pw[0], nw[0], sizeof(pf) / sizeof(pf[0]), sizeof(nf) / sizeof(nf[0]));
 
 	char file_Train_PF1[] = "G:\\Train_PF1.txt";   //2429*2101
@@ -54,7 +53,7 @@ int main()
 	char file_Test_PF1[] = "G:\\Test_PF1.txt";	   //472*2101
 	char file_Test_NF1[] = "G:\\Test_NF1.txt";	   //23573*2101
 
-	auto arr_Train_PF1 = new float[fn][pn_Train];
+	auto arr_Train_PF1 = new float[fn][Train_PF_Num];
 	fstream fp1;
 	char line1[256];
 
@@ -68,7 +67,7 @@ int main()
 
 	while (fp1.getline(line1, sizeof(line1), '\t'))
 	{
-		if (i1 == pn_Train)
+		if (i1 == Train_PF_Num)
 			break;
 
 		arr_Train_PF1[j1][i1] = atof(line1);
@@ -85,7 +84,7 @@ int main()
 	fp1.close();//關閉檔案
 
 
-	auto arr_Train_NF1 = new float[fn][fn_Train];
+	auto arr_Train_NF1 = new float[fn][Train_NF_Num];
 	fstream fp2;
 	char line2[256];
 
@@ -99,7 +98,7 @@ int main()
 
 	while (fp2.getline(line2, sizeof(line2), '\t'))
 	{
-		if (i2 == fn_Train)
+		if (i2 == Train_NF_Num)
 			break;
 
 		arr_Train_NF1[j2][i2] = atof(line2);
@@ -116,15 +115,15 @@ int main()
 	fp2.close();//關閉檔案
 
 	
-	auto arr_Test_PF1 = new float[fn][pn_Test];
+	auto arr_Test_PF1 = new float[fn][Test_PF_Num];
 
 	//動態配置二維矩陣 否則會StackOverFlow
 	//arr_Test_PF1 = new float*[row_Test_PF1];
 	//for (int i = 0; i<row_Test_PF1; i++)
-	//	arr_Test_PF1[i] = new float[pn_Test];
+	//	arr_Test_PF1[i] = new float[Test_PF_Num];
 
 	fstream fp3;
-	char line3[128];
+	char line3[256];
 
 	fp3.open(file_Test_PF1, ios::in);//開啟檔案
 	if (!fp3){//如果開啟檔案失敗，fp為0；成功，fp為非0
@@ -136,7 +135,7 @@ int main()
 
 	while (fp3.getline(line3, sizeof(line3), '\t'))
 	{
-		if (i3 == pn_Test)
+		if (i3 == Test_PF_Num)
 			break;
 
 		arr_Test_PF1[j3][i3] = atof(line3);
@@ -152,42 +151,42 @@ int main()
 
 	fp3.close();//關閉檔案
 
-	//const int row_Test_NF1 = 23573;
-	//float **arr_Test_NF1;
+
+	auto arr_Test_NF1 = new float[fn][Test_NF_Num];
 
 	////動態配置二維矩陣 否則會StackOverFlow
 	//arr_Test_NF1 = new float*[row_Test_NF1];
 	//for (int i = 0; i<row_Test_NF1; i++)
 	//	arr_Test_NF1[i] = new float[column_Test_NF1];
 
-	//fstream fp4;
-	//char line4[128];
+	fstream fp4;
+	char line4[256];
 
-	//fp4.open(file_Test_NF1, ios::in);//開啟檔案
-	//if (!fp4){//如果開啟檔案失敗，fp為0；成功，fp為非0
-	//	cout << "Fail to open file: " << file_Test_NF1 << endl;
-	//}
+	fp4.open(file_Test_NF1, ios::in);//開啟檔案
+	if (!fp4){//如果開啟檔案失敗，fp為0；成功，fp為非0
+		cout << "Fail to open file: " << file_Test_NF1 << endl;
+	}
 
-	//int i4 = 0;
-	//int j4 = 0;
+	int i4 = 0;
+	int j4 = 0;
 
-	//while (fp4.getline(line4, sizeof(line4), '\t'))
-	//{
-	//	if (i4 == row_Test_NF1)
-	//		break;
+	while (fp4.getline(line4, sizeof(line4), '\t'))
+	{
+		if (i4 == Test_NF_Num)
+			break;
 
-	//	arr_Test_NF1[i4][j4] = atof(line4);
+		arr_Test_NF1[j4][i4] = atof(line4);
 
-	//	j4++;
+		j4++;
 
-	//	if (j4 == column_Test_NF1)
-	//	{
-	//		j4 = 0;
-	//		i4++;
-	//	}
-	//}
+		if (j4 == fn)
+		{
+			j4 = 0;
+			i4++;
+		}
+	}
 
-	//fp4.close();//關閉檔案
+	fp4.close();//關閉檔案
 
 	clock_t begin = clock();
 	
@@ -215,36 +214,36 @@ int main()
 
 void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 {
-	float *pw = new float[pn_Train];
-	float *nw = new float[fn_Train];
+	float *pw = new float[Train_PF_Num];
+	float *nw = new float[Train_NF_Num];
 
-	for (int i = 0; i < pn_Train; i++)
+	for (int i = 0; i < Train_PF_Num; i++)
 	{
-		pw[i] = 0.5 / pn_Train;
+		pw[i] = 0.5 / Train_PF_Num;
 	}
 
-	for (int i = 0; i < fn_Train; i++)
+	for (int i = 0; i < Train_NF_Num; i++)
 	{
-		nw[i] = 0.5 / fn_Train;
+		nw[i] = 0.5 / Train_NF_Num;
 	}
 
 	float wsum = 0;
 
-	for (int i = 0; i < pn_Train; i++)
+	for (int i = 0; i < Train_PF_Num; i++)
 	{
 		wsum = wsum + pw[i];
 	}
-	for (int i = 0; i < fn_Train; i++)
+	for (int i = 0; i < Train_NF_Num; i++)
 	{
 		wsum = wsum + nw[i];
 	}
 
-	for (int i = 0; i < pn_Train; i++)
+	for (int i = 0; i < Train_PF_Num; i++)
 	{
 		pw[i] /= wsum;
 	}
 
-	for (int i = 0; i < fn_Train; i++)
+	for (int i = 0; i < Train_NF_Num; i++)
 	{
 		nw[i] /= wsum;
 	}
@@ -252,14 +251,14 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 	float ret[2101][3];
 
 	//OpenCL
-	int pf_shape[2] = { fn, pn_Train };
-	int nf_shape[2] = { fn, fn_Train };
+	int pf_shape[2] = { fn, Train_PF_Num };
+	int nf_shape[2] = { fn, Train_NF_Num };
 
-	compute.set_buffer((float *)pf, fn * pn_Train*sizeof(float));
-	compute.set_buffer((float *)nf, fn * fn_Train*sizeof(float));
+	compute.set_buffer((float *)pf, fn * Train_PF_Num*sizeof(float));
+	compute.set_buffer((float *)nf, fn * Train_NF_Num*sizeof(float));
 
-	compute.set_buffer((float *)pw, pn_Train*sizeof(float));
-	compute.set_buffer((float *)nw, fn_Train*sizeof(float));
+	compute.set_buffer((float *)pw, Train_PF_Num*sizeof(float));
+	compute.set_buffer((float *)nw, Train_NF_Num*sizeof(float));
 
 	compute.set_buffer((int *)pf_shape, 2 * sizeof(int));
 	compute.set_buffer((int *)nf_shape, 2 * sizeof(int));
@@ -272,20 +271,20 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 	{
 		float wsum = 0;
 
-		for (int i = 0; i < pn_Train; i++)
+		for (int i = 0; i < Train_PF_Num; i++)
 		{
 			wsum = wsum + pw[i];
 		}
-		for (int i = 0; i < fn_Train; i++)
+		for (int i = 0; i < Train_NF_Num; i++)
 		{
 			wsum = wsum + nw[i];
 		}
 
-		for (int i = 0; i < pn_Train; i++)
+		for (int i = 0; i < Train_PF_Num; i++)
 		{
 			pw[i] /= wsum;
 		}
-		for (int i = 0; i < fn_Train; i++)
+		for (int i = 0; i < Train_NF_Num; i++)
 		{
 			nw[i] /= wsum;
 		}
@@ -338,7 +337,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 
 		if (polarity == 1)
 		{
-			for (int i = 0; i < pn_Train; i++)
+			for (int i = 0; i < Train_PF_Num; i++)
 			{
 				if (pf[selectif][i] >= theta)
 				{
@@ -346,7 +345,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 				}
 			}
 
-			for (int i = 0; i < fn_Train; i++)
+			for (int i = 0; i < Train_NF_Num; i++)
 			{
 				if (nf[selectif][i] < theta)
 				{
@@ -356,14 +355,14 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 		}
 		else
 		{
-			for (int i = 0; i < pn_Train; i++)
+			for (int i = 0; i < Train_PF_Num; i++)
 			{
 				if (pf[selectif][i] < theta)
 				{
 					pw[i] = pw[i] * beta;
 				}
 			}
-			for (int i = 0; i < fn_Train; i++)
+			for (int i = 0; i < Train_NF_Num; i++)
 			{
 				if (nf[selectif][i] >= theta)
 				{
@@ -404,9 +403,9 @@ void AdaBoostTest(float data[][472])
 {
 	int F_Length = sizeof(F) / sizeof(F[0]);
 	float alphaSum = 0;
-	float *score = new float[pn_Test];
+	float *score = new float[Test_PF_Num];
 
-	for (size_t a = 0; a < pn_Test; a++)
+	for (size_t a = 0; a < Test_PF_Num; a++)
 		score[a] = 0.0;
 
 
@@ -418,7 +417,7 @@ void AdaBoostTest(float data[][472])
 	{
 		alphaSum += F[i][3];
 
-		for (size_t j = 0; j < pn_Test; j++)
+		for (size_t j = 0; j < Test_PF_Num; j++)
 		{
 			//Polarity為正
 			if (F[i][1] == 1)
@@ -426,7 +425,7 @@ void AdaBoostTest(float data[][472])
 				if (data[(int)F[i][0]][j] >= F[i][2])
 					score[j] += F[i][3];
 			}
-			//Polarity為负
+			//Polarity為负 
 			else
 			{
 				if (data[(int)F[i][0]][j] < F[i][2])
@@ -438,12 +437,25 @@ void AdaBoostTest(float data[][472])
 	cout << "\nalphaSum = " << alphaSum << "\n";
 
 	float scoreSum = 0;
-	for (size_t z = 0; z < pn_Test; z++)
+	float greatScore = 0.0;
+
+	for (size_t z = 0; z < Test_PF_Num; z++)
+	{
 		scoreSum += score[z];
+		cout << z << ", " << score[z] / alphaSum << "\n";
+		
+		if (score[z] / alphaSum > 0.5)
+			greatScore += 1;
+		//if (z % 100 == 0)
+		//	system("pause");
+	}
+		
+	cout << "\ngreatSocre= " << greatScore;
+	cout << "\npercentRate= " << greatScore / Test_PF_Num;
 
-	cout << "\nscore = " << scoreSum / (alphaSum*pn_Test) << "\n";
+	//cout << "\nscore = " << scoreSum / (alphaSum*Test_PF_Num) << "\n";
 
-	//for (size_t z = 0; z < pn_Test; z++)
+	//for (size_t z = 0; z < Test_PF_Num; z++)
 	//	cout << "socre[" << z << "] = " << score[z] << "  score/alphaSum= " << score[z] / alphaSum <<"\n";
 
 	//system("pause");
