@@ -30,28 +30,28 @@ struct WeakLeanerOutput
 };
 
 WeakLeanerOutput weakLearn(float pf1[], float nf1[], float pw[], float nw[], int pf1_sn, int nf1_sn);
-void AdaBoostTrain(float pf[][2429], float nf[][4548], int times);
-void AdaBoostTest(float data[][472]);
+void AdaBoostTrain(float pf[][233590], float nf[][221629], int times);
+void AdaBoostTest(float data[][18341]);
 float MyRound(float number);
 
 Compute compute("WeakLearn", CL_DEVICE_TYPE_GPU);
 
 const int times = 500;	//訓練次數
 float F[times][4];	//用二維矩陣 存放每次訓練完之結果 4分別代表著 1. selectif(選到的Feature) 2. polarity(右邊是正or負資料) 3.theta 4. alpha值 
-const int Train_PF_Num = 2429;  // positive number Traing Data
-const int Train_NF_Num = 4548;  // negative number Traing Data
-const int Test_PF_Num = 472;	// positive number Testing Data
-const int Test_NF_Num = 23573;  // negative number Testing Data
-const int fn = 2101;		// feature number
+const int Train_PF_Num = 233590;  // positive number Traing Data
+const int Train_NF_Num = 221629;  // negative number Traing Data
+const int Test_PF_Num = 18341;	// positive number Testing Data
+const int Test_NF_Num = 18219;  // negative number Testing Data
+const int fn = 162;		// feature number
 
 int main()
 {
 	//float *output = weakLearn(pf[0], nf[0], pw[0], nw[0], sizeof(pf) / sizeof(pf[0]), sizeof(nf) / sizeof(nf[0]));
 
-	char file_Train_PF1[] = "G:\\Train_PF1.txt";   //2429*2101
-	char file_Train_NF1[] = "G:\\Train_NF1.txt";   //4548*2101
-	char file_Test_PF1[] = "G:\\Test_PF1.txt";	   //472*2101
-	char file_Test_NF1[] = "G:\\Test_NF1.txt";	   //23573*2101
+	char file_Train_PF1[] = "G:\\2001-2012_F_Train_PF.txt";   //233590*162
+	char file_Train_NF1[] = "G:\\2001-2012_F_Train_NF.txt";   //221629*162
+	char file_Test_PF1[] = "G:\\2013_F_Test_PF.txt";	   //18341*162
+	char file_Test_NF1[] = "G:\\2013_F_Test_NF.txt";	   //18219*162
 
 	auto arr_Train_PF1 = new float[fn][Train_PF_Num];
 	fstream fp1;
@@ -82,7 +82,6 @@ int main()
 	}
 
 	fp1.close();//關閉檔案
-
 
 	auto arr_Train_NF1 = new float[fn][Train_NF_Num];
 	fstream fp2;
@@ -115,78 +114,78 @@ int main()
 	fp2.close();//關閉檔案
 
 	
-	auto arr_Test_PF1 = new float[fn][Test_PF_Num];
-
-	//動態配置二維矩陣 否則會StackOverFlow
-	//arr_Test_PF1 = new float*[row_Test_PF1];
-	//for (int i = 0; i<row_Test_PF1; i++)
-	//	arr_Test_PF1[i] = new float[Test_PF_Num];
-
-	fstream fp3;
-	char line3[256];
-
-	fp3.open(file_Test_PF1, ios::in);//開啟檔案
-	if (!fp3){//如果開啟檔案失敗，fp為0；成功，fp為非0
-		cout << "Fail to open file: " << file_Test_PF1 << endl;
-	}
-
-	int i3 = 0;
-	int j3 = 0;
-
-	while (fp3.getline(line3, sizeof(line3), '\t'))
-	{
-		if (i3 == Test_PF_Num)
-			break;
-
-		arr_Test_PF1[j3][i3] = atof(line3);
-
-		j3++;
-
-		if (j3 == fn)
-		{
-			j3 = 0;
-			i3++;
-		}
-	}
-
-	fp3.close();//關閉檔案
-
-
-	auto arr_Test_NF1 = new float[fn][Test_NF_Num];
+	//auto arr_Test_PF1 = new float[fn][Test_PF_Num];
 
 	////動態配置二維矩陣 否則會StackOverFlow
-	//arr_Test_NF1 = new float*[row_Test_NF1];
-	//for (int i = 0; i<row_Test_NF1; i++)
-	//	arr_Test_NF1[i] = new float[column_Test_NF1];
+	////arr_Test_PF1 = new float*[row_Test_PF1];
+	////for (int i = 0; i<row_Test_PF1; i++)
+	////	arr_Test_PF1[i] = new float[Test_PF_Num];
 
-	fstream fp4;
-	char line4[256];
+	//fstream fp3;
+	//char line3[256];
 
-	fp4.open(file_Test_NF1, ios::in);//開啟檔案
-	if (!fp4){//如果開啟檔案失敗，fp為0；成功，fp為非0
-		cout << "Fail to open file: " << file_Test_NF1 << endl;
-	}
+	//fp3.open(file_Test_PF1, ios::in);//開啟檔案
+	//if (!fp3){//如果開啟檔案失敗，fp為0；成功，fp為非0
+	//	cout << "Fail to open file: " << file_Test_PF1 << endl;
+	//}
 
-	int i4 = 0;
-	int j4 = 0;
+	//int i3 = 0;
+	//int j3 = 0;
 
-	while (fp4.getline(line4, sizeof(line4), '\t'))
-	{
-		if (i4 == Test_NF_Num)
-			break;
+	//while (fp3.getline(line3, sizeof(line3), '\t'))
+	//{
+	//	if (i3 == Test_PF_Num)
+	//		break;
 
-		arr_Test_NF1[j4][i4] = atof(line4);
+	//	arr_Test_PF1[j3][i3] = atof(line3);
 
-		j4++;
+	//	j3++;
 
-		if (j4 == fn)
-		{
-			j4 = 0;
-			i4++;
-		}
-	}
+	//	if (j3 == fn)
+	//	{
+	//		j3 = 0;
+	//		i3++;
+	//	}
+	//}
 
-	fp4.close();//關閉檔案
+	//fp3.close();//關閉檔案
+
+
+	//auto arr_Test_NF1 = new float[fn][Test_NF_Num];
+
+	//////動態配置二維矩陣 否則會StackOverFlow
+	////arr_Test_NF1 = new float*[row_Test_NF1];
+	////for (int i = 0; i<row_Test_NF1; i++)
+	////	arr_Test_NF1[i] = new float[column_Test_NF1];
+
+	//fstream fp4;
+	//char line4[256];
+
+	//fp4.open(file_Test_NF1, ios::in);//開啟檔案
+	//if (!fp4){//如果開啟檔案失敗，fp為0；成功，fp為非0
+	//	cout << "Fail to open file: " << file_Test_NF1 << endl;
+	//}
+
+	//int i4 = 0;
+	//int j4 = 0;
+
+	//while (fp4.getline(line4, sizeof(line4), '\t'))
+	//{
+	//	if (i4 == Test_NF_Num)
+	//		break;
+
+	//	arr_Test_NF1[j4][i4] = atof(line4);
+
+	//	j4++;
+
+	//	if (j4 == fn)
+	//	{
+	//		j4 = 0;
+	//		i4++;
+	//	}
+	//}
+
+	//fp4.close();//關閉檔案
 
 	clock_t begin = clock();
 	
@@ -195,7 +194,7 @@ int main()
 	//printf("%f/n", TP / row_Test_PF1);
 	//int FP = row_Test_NF1-AdaBoostTest(arr_Test_NF1[0], row_Test_NF1, column_Test_NF1);
 	//printf("%f/n", FP / row_Test_NF1);
-	AdaBoostTest(arr_Test_PF1);
+	//AdaBoostTest(arr_Test_PF1);
 	clock_t end = clock();
 	double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
 	cout << "Time: " << elapsed_secs << " seconds!!!!" << endl;
@@ -212,7 +211,7 @@ int main()
 	system("pause");
 }
 
-void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
+void AdaBoostTrain(float pf[][233590], float nf[][221629], int times)
 {
 	float *pw = new float[Train_PF_Num];
 	float *nw = new float[Train_NF_Num];
@@ -248,7 +247,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 		nw[i] /= wsum;
 	}
 
-	float ret[2101][3];
+	float ret[fn][3];
 
 	//OpenCL
 	int pf_shape[2] = { fn, Train_PF_Num };
@@ -297,7 +296,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 
 
 		//幾個Kernel在跑
-		compute.run(2101);
+		compute.run(fn);
 
 	
 		for (int y = 0; y < fn; y++)
@@ -379,7 +378,7 @@ void AdaBoostTrain(float pf[][2429], float nf[][4548], int times)
 		F[i][3] = log(1 / beta);
 
 		//把alpha值 四捨五入至小數第四位
-		F[i][3] = MyRound(F[i][3]);
+		//F[i][3] = MyRound(F[i][3]);
 
 		/*if (i % 100 == 0)*/
 			printf("[%d] , %f, %f, %f, %f\n", i + 1, F[i][0] + 1, F[i][1], F[i][2], F[i][3]);
@@ -399,9 +398,8 @@ float MyRound(float number)
 	return f;
 }
 
-void AdaBoostTest(float data[][472])
+void AdaBoostTest(float data[][18341])
 {
-	int F_Length = sizeof(F) / sizeof(F[0]);
 	float alphaSum = 0;
 	float *score = new float[Test_PF_Num];
 
@@ -413,7 +411,7 @@ void AdaBoostTest(float data[][472])
 	//cout << "\alphaSum= " << alphaSum;
 	//system("pause");
 
-	for (size_t i = 0; i < F_Length; i++)
+	for (size_t i = 0; i < times; i++)
 	{
 		alphaSum += F[i][3];
 
@@ -442,12 +440,10 @@ void AdaBoostTest(float data[][472])
 	for (size_t z = 0; z < Test_PF_Num; z++)
 	{
 		scoreSum += score[z];
-		cout << z << ", " << score[z] / alphaSum << "\n";
+		//cout << z << ", " << score[z] / alphaSum << "\n";
 		
 		if (score[z] / alphaSum > 0.5)
 			greatScore += 1;
-		//if (z % 100 == 0)
-		//	system("pause");
 	}
 		
 	cout << "\ngreatSocre= " << greatScore;
